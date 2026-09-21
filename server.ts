@@ -11,11 +11,6 @@ import fs from "fs";
 
 
 
-//234556
-
-
-//00000000
-
 dotenv.config();
 
 async function startServer() {
