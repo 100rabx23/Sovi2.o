@@ -7,8 +7,6 @@ import fs from "fs";
 
 
 
-//100 to qu
-
 
 
 dotenv.config();
