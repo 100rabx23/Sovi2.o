@@ -6,6 +6,8 @@ interface AudioWaveformProps {
   audioData?: Float32Array; // Real-time audio data
 }
 
+
+//7766
 export function AudioWaveform({ isTransmitting, isListening, audioData }: AudioWaveformProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
