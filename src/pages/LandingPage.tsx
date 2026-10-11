@@ -25,7 +25,7 @@ export function LandingPage({ onStartSend, onStartReceive, onViewHistory }: Land
               <Radio size={19} />
             </div>
             <div>
-              <div className="text-lg font-black tracking-[-0.04em]">SOUND<span className="text-[#707b50]">MESH</span></div>
+              <div className="text-lg font-black tracking-[-0.04em]">SO<span className="text-[#707b50]">VI</span></div>
               <div className="text-[9px] font-bold uppercase tracking-[0.28em] text-[#7d836f]">Acoustic data layer</div>
             </div>
           </div>
