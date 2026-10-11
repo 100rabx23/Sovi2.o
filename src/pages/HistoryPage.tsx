@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Trash2, Volume2, Mic, Clock, Play, Square } from 'lucide-react';
+import { ArrowLeft, Trash2, Volume2, Mic, Clock3, Play, Square, History, Inbox, Send } from 'lucide-react';
 import { motion } from 'motion/react';
 import { generateWavBlob } from '../audio/ggwaveEncoder';
 
-interface HistoryPageProps {
-  onBack: () => void;
-}
+interface HistoryPageProps { onBack: () => void; }
 
 export function HistoryPage({ onBack }: HistoryPageProps) {
   const [history, setHistory] = useState<any[]>([]);
@@ -15,120 +13,84 @@ export function HistoryPage({ onBack }: HistoryPageProps) {
   useEffect(() => {
     const historyStr = localStorage.getItem('soundmesh_history');
     if (historyStr) {
-      try {
-        setHistory(JSON.parse(historyStr).reverse());
-      } catch (e) {
-        setHistory([]);
-      }
+      try { setHistory(JSON.parse(historyStr).reverse()); } catch { setHistory([]); }
     }
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
+    return () => { if (audioRef.current) audioRef.current.pause(); };
   }, []);
 
   const clearHistory = () => {
-    if (confirm('Are you sure you want to clear all history?')) {
-      localStorage.removeItem('soundmesh_history');
-      setHistory([]);
-    }
+    if (confirm('Are you sure you want to clear all history?')) { localStorage.removeItem('soundmesh_history'); setHistory([]); }
   };
 
   const togglePlayAudio = async (message: string, index: number) => {
-    if (playingIndex === index && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-      setPlayingIndex(null);
-      return;
-    }
-
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
+    if (playingIndex === index && audioRef.current) { audioRef.current.pause(); audioRef.current = null; setPlayingIndex(null); return; }
+    if (audioRef.current) audioRef.current.pause();
     try {
       setPlayingIndex(index);
-      const packet = `SM1|${Math.floor(Math.random()*1000)}|${message}`;
+      const packet = `SM1|${Math.floor(Math.random() * 1000)}|${message}`;
       const blob = await generateWavBlob(packet);
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      
-      audio.onended = () => {
-        setPlayingIndex(null);
-        audioRef.current = null;
-      };
-      
+      const audio = new Audio(url); audioRef.current = audio;
+      audio.onended = () => { setPlayingIndex(null); audioRef.current = null; URL.revokeObjectURL(url); };
       await audio.play();
-    } catch (e) {
-      console.error(e);
-      setPlayingIndex(null);
-    }
+    } catch (e) { console.error(e); setPlayingIndex(null); }
   };
 
   return (
-    <div className="flex flex-col flex-1 h-[100dvh] relative overflow-hidden bg-[#020408]">
-      <header className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-6 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-20 w-full">
-        <button onClick={onBack} className="p-2 -ml-2 text-gray-400 hover:text-white transition-colors bg-white/5 rounded-full hover:bg-white/10">
-          <ArrowLeft size={20} />
-        </button>
-        <div className="font-bold tracking-widest uppercase text-[11px] sm:text-sm text-gray-300">Message History</div>
-        {history.length > 0 ? (
-          <button onClick={clearHistory} className="p-2 -mr-2 text-red-400 hover:text-red-300 transition-colors bg-red-500/10 rounded-full hover:bg-red-500/20">
-            <Trash2 size={20} />
-          </button>
-        ) : (
-          <div className="w-9"></div>
-        )}
+    <div className="min-h-[100dvh] w-full overflow-hidden bg-[#f7f7f2] text-[#20251a]">
+      <header className="sticky top-0 z-30 border-b border-[#657047]/10 bg-[#f7f7f2]/80 px-4 py-4 backdrop-blur-2xl sm:px-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
+          <button onClick={onBack} className="grid h-10 w-10 place-items-center rounded-xl border border-[#657047]/15 bg-white/70 text-[#68734d] transition hover:-translate-x-0.5 hover:bg-white"><ArrowLeft size={19} /></button>
+          <div className="text-center"><div className="text-[10px] font-extrabold uppercase tracking-[.25em] text-[#7b826f]">SoundMesh</div><div className="mt-0.5 text-sm font-black tracking-tight">Transmission history</div></div>
+          {history.length > 0 ? <button onClick={clearHistory} className="grid h-10 w-10 place-items-center rounded-xl border border-red-200 bg-red-50 text-red-500 transition hover:bg-red-100"><Trash2 size={18} /></button> : <div className="h-10 w-10" />}
+        </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8 w-full max-w-2xl mx-auto">
-        {history.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
-            <Clock size={48} className="text-gray-700" />
-            <p className="text-sm uppercase tracking-widest font-semibold">No records found</p>
+      <main className="relative mx-auto min-h-[calc(100dvh-73px)] max-w-5xl px-4 py-8 sm:px-8">
+        <div className="pointer-events-none absolute -right-32 top-0 h-80 w-80 rounded-full bg-[#c4ccb0]/25 blur-3xl" />
+        <div className="relative">
+          <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <div className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#7b826f]"><History size={14} /> Local archive</div>
+              <h1 className="mt-2 text-4xl font-black tracking-[-.055em] sm:text-5xl">Your transmissions.</h1>
+              <p className="mt-2 text-sm text-[#858a7c]">{history.length} {history.length === 1 ? 'record' : 'records'} stored on this device.</p>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {history.map((item, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-white/5 border border-white/10 p-5 rounded-3xl flex flex-col gap-3 backdrop-blur-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${item.type === 'sent' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                    {item.type === 'sent' ? <Volume2 size={14} /> : <Mic size={14} />}
-                    <span>{item.type === 'sent' ? 'Transmitted' : 'Received'}</span>
+
+          {history.length === 0 ? (
+            <div className="flex min-h-[48vh] flex-col items-center justify-center rounded-[2rem] border border-dashed border-[#657047]/15 bg-white/50 p-10 text-center">
+              <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#e8ebde] text-[#77805d]"><Clock3 size={28} /></div>
+              <div className="mt-5 text-lg font-black tracking-tight">Nothing here yet</div>
+              <p className="mt-2 max-w-sm text-sm leading-6 text-[#92978a]">Send or receive a SoundMesh message and your local activity will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {history.map((item, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * .04, .3) }}
+                  className="group rounded-[1.5rem] border border-[#657047]/10 bg-white/75 p-4 shadow-sm backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_50px_rgba(70,77,48,.09)] sm:p-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${item.type === 'sent' ? 'bg-[#e5e9d8] text-[#667149]' : 'bg-[#edf0e6] text-[#7b8463]'}`}>
+                      {item.type === 'sent' ? <Send size={19} /> : <Inbox size={19} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[9px] font-extrabold uppercase tracking-[.18em] text-[#68734d]">{item.type === 'sent' ? 'Transmitted' : 'Received'}</span>
+                        <span className="h-1 w-1 rounded-full bg-[#b3b7aa]" />
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-[#a0a397]">{new Date(item.timestamp).toLocaleString()}</span>
+                      </div>
+                      <div className="mt-2 break-words text-base font-semibold leading-6 text-[#303625] sm:text-lg">{item.message}</div>
+                    </div>
+                    {item.type === 'sent' && (
+                      <button onClick={() => togglePlayAudio(item.message, i)} className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition ${playingIndex === i ? 'border-[#657047]/20 bg-[#e5e9d8] text-[#667149]' : 'border-[#657047]/10 bg-[#f6f7f1] text-[#89907e] hover:bg-[#e9ecdf] hover:text-[#667149]'}`}>
+                        {playingIndex === i ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+                      </button>
+                    )}
                   </div>
-                  <div className="text-[10px] text-gray-500 font-mono">
-                    {new Date(item.timestamp).toLocaleString()}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-white text-base sm:text-lg leading-relaxed pl-1 flex-1 pr-4">
-                    {item.message}
-                  </div>
-                  {item.type === 'sent' && (
-                    <button 
-                      onClick={() => togglePlayAudio(item.message, i)}
-                      className={`p-2 sm:p-3 rounded-xl border transition-colors flex-shrink-0 group relative ${
-                        playingIndex === i 
-                        ? 'bg-purple-500/20 border-purple-500/50 hover:bg-purple-500/30 text-purple-400' 
-                        : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {playingIndex === i ? <Square size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
