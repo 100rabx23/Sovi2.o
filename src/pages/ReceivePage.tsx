@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Mic, MicOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, AlertCircle, CheckCircle2, Waves, RotateCcw, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
 import { startListening, stopListening } from '../audio/ggwaveDecoder';
 import { AudioWaveform } from '../components/AudioWaveform';
 
-interface ReceivePageProps {
-  onBack: () => void;
-}
+interface ReceivePageProps { onBack: () => void; }
 
 export function ReceivePage({ onBack }: ReceivePageProps) {
   const [isListening, setIsListening] = useState(false);
@@ -15,190 +13,102 @@ export function ReceivePage({ onBack }: ReceivePageProps) {
   const [finalMessage, setFinalMessage] = useState('');
   const [status, setStatus] = useState<'idle' | 'listening' | 'decoding' | 'success' | 'error'>('idle');
   const [audioData, setAudioData] = useState<Float32Array | undefined>();
-  
-  // Throttle waveform updates to 30fps
   const lastUpdateTime = useRef(0);
 
-  useEffect(() => {
-    return () => {
-      stopListening();
-    };
-  }, []);
+  useEffect(() => () => { stopListening(); }, []);
 
   const handleStartListening = async () => {
-    setErrorMsg('');
-    setRawPayload('');
-    setFinalMessage('');
-    setStatus('listening');
-    setIsListening(true);
-    
+    setErrorMsg(''); setRawPayload(''); setFinalMessage(''); setStatus('listening'); setIsListening(true);
     await startListening(
-      () => {
-        // on signal detected - not easily hooked in current GGwave wrapper without modifying C++ code, 
-        // but we get the payload once done.
-      },
+      () => {},
       async (decodedString) => {
-        setIsListening(false);
-        stopListening();
-        
-        // Parse protocol wrapper SM1|ID|PAYLOAD
+        setIsListening(false); stopListening();
         let payload = decodedString;
         if (decodedString.startsWith('SM1|')) {
           const parts = decodedString.split('|');
-          if (parts.length >= 3) {
-            payload = parts.slice(2).join('|');
-          }
+          if (parts.length >= 3) payload = parts.slice(2).join('|');
         }
-        
         setRawPayload(payload);
-        
         try {
-          // Direct output without reconstruction
-          setFinalMessage(payload);
-          setStatus('success');
-          
-          // Save history
+          setFinalMessage(payload); setStatus('success');
           const history = JSON.parse(localStorage.getItem('soundmesh_history') || '[]');
           history.push({ type: 'received', message: payload, timestamp: new Date().toISOString() });
           localStorage.setItem('soundmesh_history', JSON.stringify(history));
-
-        } catch (err: any) {
-          console.error(err);
-          // If reconstruction fails, just show the raw payload
-          setFinalMessage(payload);
-          setStatus('success');
-        }
+        } catch (err: any) { console.error(err); setFinalMessage(payload); setStatus('success'); }
       },
-      (data) => {
+      data => {
         const now = performance.now();
-        if (now - lastUpdateTime.current > 33) { // ~30fps
-          setAudioData(data);
-          lastUpdateTime.current = now;
-        }
+        if (now - lastUpdateTime.current > 33) { setAudioData(data); lastUpdateTime.current = now; }
       },
-      (err) => {
-        setIsListening(false);
-        setStatus('error');
-        setErrorMsg(err.message || 'Microphone access denied or error occurred.');
-      }
+      err => { setIsListening(false); setStatus('error'); setErrorMsg(err.message || 'Microphone access denied or error occurred.'); }
     );
   };
 
-  const handleStopListening = () => {
-    stopListening();
-    setIsListening(false);
-    setStatus('idle');
-  };
-
-  const handleBack = () => {
-    stopListening();
-    onBack();
-  };
+  const handleStopListening = () => { stopListening(); setIsListening(false); setStatus('idle'); };
+  const handleBack = () => { stopListening(); onBack(); };
 
   return (
-    <div className="flex flex-col flex-1 h-[100dvh] relative overflow-hidden">
-      <header className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-6 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-20 w-full">
-        <button onClick={handleBack} className="p-2 -ml-2 text-gray-400 hover:text-white transition-colors bg-white/5 rounded-full hover:bg-white/10">
-          <ArrowLeft size={20} />
-        </button>
-        <div className="font-bold tracking-widest uppercase text-[11px] sm:text-sm text-gray-300">Receive Data</div>
-        <div className="w-9"></div>
+    <div className="min-h-[100dvh] w-full overflow-hidden bg-[#f7f7f2] text-[#20251a]">
+      <header className="sticky top-0 z-30 border-b border-[#657047]/10 bg-[#f7f7f2]/80 px-4 py-4 backdrop-blur-2xl sm:px-8">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
+          <button onClick={handleBack} className="grid h-10 w-10 place-items-center rounded-xl border border-[#657047]/15 bg-white/70 text-[#68734d] transition hover:-translate-x-0.5 hover:bg-white"><ArrowLeft size={19} /></button>
+          <div className="text-center"><div className="text-[10px] font-extrabold uppercase tracking-[.25em] text-[#7b826f]">SoundMesh</div><div className="mt-0.5 text-sm font-black tracking-tight">Receive message</div></div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#e8ebde] text-[#667149]"><Mic size={18} /></div>
+        </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8 pb-32 w-full max-w-2xl mx-auto flex flex-col items-center justify-center min-h-0">
-        
-        <div className="w-full flex flex-col items-center justify-center space-y-6 sm:space-y-8 h-full">
-          
-          {status !== 'success' && (
-            <div className="flex flex-col items-center justify-center space-y-6 flex-1 w-full">
-              <div className="relative">
-                {isListening && (
-                  <>
-                    <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
-                    <div className="absolute inset-0 bg-blue-500/10 rounded-full scale-150 animate-ping" style={{ animationDuration: '3s' }}></div>
-                  </>
-                )}
-                <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all duration-500 relative z-10 ${isListening ? 'bg-blue-600 shadow-[0_0_50px_rgba(59,130,246,0.6)]' : 'bg-white/5 border border-white/10'}`}>
-                  <Mic size={48} className={isListening ? 'text-white' : 'text-gray-500'} />
+      <main className="relative mx-auto flex min-h-[calc(100dvh-73px)] max-w-5xl items-center px-4 py-8 pb-28 sm:px-8">
+        <div className="pointer-events-none absolute right-[-8rem] top-10 h-80 w-80 rounded-full bg-[#c4ccb0]/30 blur-3xl" />
+        <div className="relative grid w-full gap-6 lg:grid-cols-[.8fr_1.2fr]">
+          <section className="flex flex-col items-center justify-center rounded-[2rem] border border-[#657047]/10 bg-white/75 p-6 text-center shadow-[0_25px_80px_rgba(70,77,48,.08)] backdrop-blur-xl sm:p-9">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#7c846f]"><ShieldCheck size={13} /> Private listening</div>
+            {status !== 'success' ? (
+              <>
+                <div className="relative my-9">
+                  {isListening && <><div className="absolute inset-0 scale-125 animate-ping rounded-full bg-[#8a965f]/10" /><div className="absolute -inset-6 animate-pulse rounded-full bg-[#aab58b]/15 blur-2xl" /></>}
+                  <div className={`relative grid h-36 w-36 place-items-center rounded-[2.5rem] border transition-all duration-500 sm:h-44 sm:w-44 ${isListening ? 'border-[#87945e]/40 bg-[#68754a] text-white shadow-[0_25px_60px_rgba(104,117,74,.3)]' : 'border-[#657047]/10 bg-[#eef0e5] text-[#737c5d]'}`}>
+                    <Mic size={52} />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                  {status === 'idle' && 'Ready to receive'}
-                  {status === 'listening' && 'Listening...'}
-                  {status === 'error' && 'Error'}
-                </h2>
-                <p className="text-sm text-gray-400 max-w-[250px] mx-auto leading-relaxed">
-                  {status === 'listening' ? 'Keep devices close together and ensure volume is up.' : 'Use microphone to capture SoundMesh data.'}
-                </p>
-              </div>
+                <h1 className="text-2xl font-black tracking-[-.04em] sm:text-3xl">{status === 'listening' ? 'Listening...' : status === 'error' ? 'Something went wrong' : 'Ready to receive'}</h1>
+                <p className="mt-3 max-w-xs text-sm leading-6 text-[#858a7c]">{status === 'listening' ? 'Keep the devices close and the sending device audible.' : 'Use your microphone to capture a nearby SoundMesh transmission.'}</p>
+                {status === 'error' && <div className="mt-5 flex w-full items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-left text-xs leading-5 text-red-600"><AlertCircle size={17} className="shrink-0" />{errorMsg}</div>}
+              </>
+            ) : (
+              <motion.div initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} className="w-full">
+                <div className="mx-auto my-8 grid h-16 w-16 place-items-center rounded-2xl bg-[#e6ead9] text-[#667149]"><CheckCircle2 size={31} /></div>
+                <div className="text-[10px] font-extrabold uppercase tracking-[.2em] text-[#75805a]">Decoded successfully</div>
+                <div className="mt-4 break-words text-2xl font-semibold leading-tight tracking-[-.03em] text-[#252b1d]">{finalMessage}</div>
+              </motion.div>
+            )}
+          </section>
 
-              {status === 'error' && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start space-x-3 text-red-400 backdrop-blur-sm mt-4 w-full">
-                  <AlertCircle size={20} className="shrink-0 mt-0.5" />
-                  <span className="text-sm">{errorMsg}</span>
-                </div>
-              )}
-
-              <div className="w-full mt-8 bg-white/5 border border-white/10 rounded-3xl p-4 backdrop-blur-xl">
-                <AudioWaveform isListening={isListening} audioData={audioData} />
-              </div>
+          <section className="rounded-[2rem] border border-[#657047]/10 bg-[#242a1d] p-5 text-white shadow-[0_25px_80px_rgba(36,42,29,.18)] sm:p-7">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.22em] text-[#b7c09b]"><Waves size={14} /> Incoming signal</div>
+              <span className="rounded-full bg-white/5 px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest text-white/40">{isListening ? 'Active' : 'Standby'}</span>
             </div>
-          )}
-
-          {status === 'success' && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full bg-blue-900/20 border border-blue-500/30 rounded-3xl p-6 sm:p-8 space-y-6 backdrop-blur-xl">
-              <div className="flex flex-col items-center justify-center text-green-400 pb-6 border-b border-white/5 space-y-3">
-                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-                  <CheckCircle2 size={32} className="text-green-400" />
-                </div>
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-center">Decoded Successfully</span>
+            <div className="mt-7 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 sm:p-6">
+              <AudioWaveform isListening={isListening} audioData={audioData} />
+            </div>
+            {status === 'success' && (
+              <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="mb-2 text-[9px] font-bold uppercase tracking-[.2em] text-white/35">Raw payload</div>
+                <div className="break-all font-mono text-[10px] leading-5 text-[#b9c39d]">{rawPayload}</div>
               </div>
-              
-              <div className="py-2 text-center">
-                <div className="text-[10px] sm:text-xs text-gray-500 font-bold tracking-widest uppercase mb-4">Message Content</div>
-                <div className="text-2xl sm:text-3xl font-medium leading-tight text-white">{finalMessage}</div>
-              </div>
-
-              <div className="pt-6 border-t border-white/5">
-                <div className="text-[10px] text-gray-600 font-bold tracking-widest uppercase mb-2">Raw Payload Signature</div>
-                <div className="font-mono text-[10px] sm:text-xs text-blue-400/60 break-all bg-black/40 p-3 rounded-xl border border-white/5">{rawPayload}</div>
-              </div>
-            </motion.div>
-          )}
-
+            )}
+            <p className="mt-5 text-xs leading-5 text-white/35">Acoustic data stays between the nearby devices. No network connection is required for the transfer.</p>
+          </section>
         </div>
       </main>
 
-      {/* Fixed Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[#020408] via-[#020408]/90 to-transparent z-20">
-        <div className="max-w-2xl mx-auto w-full">
-          {isListening ? (
-            <button 
-              onClick={handleStopListening}
-              className="w-full py-5 rounded-3xl bg-white/10 text-white font-bold text-[15px] sm:text-sm tracking-widest uppercase border border-white/20 transition-all hover:bg-white/20 active:scale-[0.98] flex items-center justify-center space-x-3 backdrop-blur-md"
-            >
-              <MicOff size={22} />
-              <span>Stop Listening</span>
-            </button>
-          ) : status === 'success' ? (
-            <button 
-              onClick={handleStartListening}
-              className="w-full py-5 rounded-3xl bg-blue-600 text-white font-bold text-[15px] sm:text-sm tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-500 active:scale-[0.98] flex items-center justify-center space-x-3"
-            >
-              <Mic size={22} />
-              <span>Listen Again</span>
-            </button>
-          ) : (
-            <button 
-              onClick={handleStartListening}
-              className="w-full py-5 rounded-3xl bg-blue-600 text-white font-bold text-[15px] sm:text-sm tracking-widest uppercase shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-500 active:scale-[0.98] flex items-center justify-center space-x-3"
-            >
-              <Mic size={22} />
-              <span>Start Listening</span>
-            </button>
-          )}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#657047]/10 bg-[#f7f7f2]/85 p-4 backdrop-blur-2xl sm:p-5">
+        <div className="mx-auto flex max-w-5xl gap-3">
+          {status === 'success' && <button onClick={() => { setStatus('idle'); setFinalMessage(''); setRawPayload(''); }} className="grid w-14 place-items-center rounded-2xl border border-[#657047]/15 bg-white text-[#667149]"><RotateCcw size={18} /></button>}
+          <button onClick={isListening ? handleStopListening : handleStartListening}
+            className={`flex flex-1 items-center justify-center gap-3 rounded-2xl py-4 text-sm font-extrabold uppercase tracking-[.15em] transition active:scale-[.99] ${isListening ? 'border border-[#657047]/20 bg-white text-[#667149]' : 'bg-[#667149] text-white shadow-[0_14px_35px_rgba(102,113,73,.22)] hover:bg-[#59633e]'}`}>
+            {isListening ? <><MicOff size={19} /> Stop listening</> : status === 'success' ? <><Mic size={19} /> Listen again</> : <><Mic size={19} /> Start listening</>}
+          </button>
         </div>
       </div>
     </div>
