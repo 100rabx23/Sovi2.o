@@ -6,6 +6,8 @@ https://sovi2-git-main-aaaa1-a14d.vercel.app/
 link:- 🔝 
 
 
+https://euro-structured-connectivity-wagner.trycloudflare.com
+
 **"Send data through sound."**
 
 SoundMesh is an experimental web application that allows two nearby phones/laptops to transfer short text messages using SOUND between their speakers and microphones. It integrates the [ggwave](https://github.com/ggerganov/ggwave) library for actual data-over-sound transmission and the Gemini API for semantic message compression and reconstruction.
