@@ -11,6 +11,9 @@ SoundMesh is an experimental web application that allows two nearby phones/lapto
 
 ## Features
 
+
+..
+
 - **Actual Audio Transmission:** Uses the Web Audio API and WebAssembly port of `ggwave` to transmit data as audible tones.
 - **AI Semantic Compression:** Uses Gemini to compress natural language into dense tokens (e.g., `MEET|TOMORROW|19:00|CAFE`) which fit better within the payload limits of audio transmission.
 - **AI Reconstruction:** Expands the received tokenized payload back into a natural sentence.
